@@ -11,6 +11,61 @@ Claude Code と Codex CLI の両方から同じ手順で使える。
 対象リポジトリの中にはファイルを作らない（設定ファイル `.maestro-evidence.json` だけは
 利用者の同意を得て置く）。
 
+## クイックスタート
+
+```
+git clone https://github.com/syunsuke-eda/maestro-evidence.git ~/.codex/skills/maestro-evidence
+bash ~/.codex/skills/maestro-evidence/install.sh
+cd <対象リポジトリ> && python3 ~/.codex/skills/maestro-evidence/scripts/me.py config init > .maestro-evidence.json
+python3 ~/.codex/skills/maestro-evidence/scripts/me.py credentials set   # ログインが要る場合だけ
+```
+
+あとは AI エージェントに「このブランチの変更を Simulator で検証して証跡を作って」と頼む。
+
+詳しくは「前提ツール」以降を読む。うまくいかないときは
+`python3 ~/.codex/skills/maestro-evidence/scripts/me.py doctor` が足りないものを教える。
+
+## 何が起きるか
+
+エージェントが3段階で進める。人間が判断するのは1と3の2か所だけで、途中は止まらない。
+
+| | やること | 人間の関与 |
+|---|---|---|
+| Phase 1 | 差分を読んで確認ケースを提案する | **承認する** |
+| Phase 2 | 録画しながら1回だけ操作し、ログとスクリーンショットを集める | なし |
+| Phase 3 | `index.html` を作る。PR へ投稿する場合は本文と動画を提示 | **投稿を承認する** |
+
+Phase 2 は「探索してから本番を録り直す」ことをしない。1回の操作をそのまま証跡にする。
+
+## 何が出てくるか
+
+`~/maestro-evidence-work/<repo>/<branch>/<timestamp>/` に次が残る。
+
+```
+index.html              ← これを開く
+session.json            全記録
+log-launch.txt          アプリの出力（時刻付き）
+log-os.txt              OSログ（時刻付き）
+cases/<case-id>/
+  video.mp4             ケースの録画（H.264、9MB以下、先頭の静止は切り詰め済み）
+  final-frame.png       最終状態
+  contact-sheet.png     全体を12コマで俯瞰
+  screenshots/*.png     途中で撮ったもの
+  steps.json            実行した操作の記録
+  log.txt               このケースの区間のログ
+  errors.txt            error と判定された行だけ
+```
+
+## 用語
+
+| 用語 | 意味 |
+|---|---|
+| session | アプリの起動から停止までの1回。ログ収集の単位。`session start` で始まり `session stop` で終わる |
+| case | 1つの確認項目。**録画の単位**で、`case start` から `case end` までが1本の動画になる |
+| step | Maestro コマンドのまとまり1回分。「操作 + 待機 + assert」を1 step にする |
+| type | 文字入力。Android では ADBKeyBoard 経由になるので `step` の `inputText` は使わない |
+| work dir | 成果物の置き場。`session start` が作り、以降のコマンドに `--work` で渡す |
+
 ## 前提ツール
 
 | ツール | 要否 | 用途 |
@@ -31,28 +86,30 @@ curl -Ls "https://get.maestro.mobile.dev" | bash
 
 ## インストール
 
-正本を `~/.codex/skills/maestro-evidence/` へ置き、そこから `install.sh` を実行する。
-
 ```
-mkdir -p ~/.codex/skills
-cp -R maestro-evidence ~/.codex/skills/maestro-evidence
-~/.codex/skills/maestro-evidence/install.sh
+git clone https://github.com/syunsuke-eda/maestro-evidence.git ~/.codex/skills/maestro-evidence
+bash ~/.codex/skills/maestro-evidence/install.sh
 ```
 
 `install.sh` は配置を確認し、`~/.claude/skills/maestro-evidence` を正本への symlink として
 作り、環境診断まで行う。既存のファイルは上書きしない。
 
-ダウンロードした場所（`~/Downloads` など）から直接実行した場合は、symlink を作らずに
-上のコマンドを案内して終わる。一時的な場所を指す symlink が残らないようにするため。
+正本を `~/.codex/skills/` に置いて Claude 側を symlink にすると、1つの実体を両方のホストから
+使えて更新も1回で済む。
 
 ### 片方しか使わない場合
 
-**Claude Code だけ**なら `~/.claude/skills/maestro-evidence/` に直接置けばよい。symlink は
-不要で、`install.sh` も実行しなくてよい（`me.py doctor` だけ実行する）。
+**Claude Code だけ**なら `~/.claude/skills/maestro-evidence` へ clone すればよい。symlink は
+不要で、`install.sh` の代わりに `python3 scripts/me.py doctor` だけ実行する。
 
-**Codex CLI だけ**なら `~/.codex/skills/maestro-evidence/` に置くだけでよい。`install.sh` は
-Claude 側の symlink を作ろうとするが、`~/.claude` が無ければ作成して symlink を張るだけで、
-Codex 側の動作には影響しない。
+**Codex CLI だけ**なら上のコマンドのままでよい。`install.sh` が作る Claude 側の symlink は
+Codex の動作に影響しない。
+
+### zip で受け取った場合
+
+git を使わずに受け取ったときは、展開して `~/.codex/skills/maestro-evidence` へ置いてから
+そこの `install.sh` を実行する。展開先から直接実行すると、一時的な場所を指す symlink が
+残らないよう、symlink を作らずに手順だけ案内して終わる。
 
 ## 初回セットアップ
 
@@ -96,6 +153,10 @@ python3 ~/.codex/skills/maestro-evidence/scripts/me.py config validate
 値は macOS の Keychain に入れ、`security` 自身の非表示プロンプトへ入力する。
 チャットにもファイルにも残らない。
 
+**登録は開発者ごとに自分の Keychain へ行う。** 設定ファイルに入るのは Keychain の service 名と
+環境変数名だけで、値そのものは共有されない。リポジトリを共有しても、各自が自分のアカウントを
+登録する必要がある。
+
 ```
 python3 ~/.codex/skills/maestro-evidence/scripts/me.py credentials set
 python3 ~/.codex/skills/maestro-evidence/scripts/me.py credentials status
@@ -118,19 +179,27 @@ cp <ダウンロード先>/ADBKeyboard.apk ~/.maestro-evidence/ADBKeyboard.apk
 
 ## 使い方
 
-AI エージェントに任せるのが前提のスキル。Claude Code か Codex CLI で次のように頼む。
+AI エージェントに任せるのが前提のスキル。呼び出し方はホストで違う。
+
+**Codex CLI**
 
 ```
 $maestro-evidence を使って、このブランチの変更をSimulatorで検証し、証跡を作ってください。
 ```
 
-エージェントは次の順で進める。人間が判断するのは 1 と 3 の2か所だけ。
+**Claude Code**
 
-1. 差分から確認ケースを提案する → **ユーザーが承認**
-2. 録画しながら1回だけ操作し、ログとスクリーンショットを集める
-3. `index.html` で結果を確認 → PR へ投稿するなら **ユーザーが承認**
+```
+/maestro-evidence このブランチの変更をSimulatorで検証して証跡を作って
+```
 
-手で動かす場合の最短例。
+自然文だけでも起動する。
+
+```
+このブランチの変更をSimulatorで検証して証跡を作って
+```
+
+進み方は「何が起きるか」のとおり。手で動かす場合の最短例は次。
 
 ```
 ME="python3 ~/.codex/skills/maestro-evidence/scripts/me.py"
@@ -213,10 +282,19 @@ AVD によっては Wi-Fi と DNS の初期状態で外部へ出られない。�
 emulator -avd <AVD名> -feature -VirtioWifi -dns-server 8.8.8.8
 ```
 
-### Android: flow が最初の画面で止まる
+### Android: 通知許可ダイアログに操作を遮られる
 
-新規作成した AVD は初回起動時のセットアップが残っていて、アプリの前にウィザードが出る。
-一度手動で起動して初期設定を済ませてから使う。
+初回起動時に「Allow / Don’t allow」の通知許可ダイアログが出て、その先の操作が届かない。
+step の先頭に `optional: true` で閉じる操作を入れておく。既に許可済みでも失敗しない。
+
+```yaml
+- tapOn:
+    text: "Don’t allow"
+    optional: true
+```
+
+アポストロフィは `’`（U+2019）で、キーボードから打つ `'`（U+0027）とは別の文字。Maestro の
+`text` は全文一致なので `"Don't allow"` と打ち直すと一致しない。上の例をそのままコピーする。
 
 ### iOS: ログが1行も取れない
 
@@ -235,16 +313,17 @@ emulator -avd <AVD名> -feature -VirtioWifi -dns-server 8.8.8.8
 
 ## 更新方法
 
-新しい版を受け取ったら、正本のディレクトリを置き換える。symlink は張り直さなくてよい。
-
 ```
-rm -rf ~/.codex/skills/maestro-evidence
-cp -R <新しい maestro-evidence> ~/.codex/skills/maestro-evidence
-python3 ~/.codex/skills/maestro-evidence/scripts/me.py doctor
+cd ~/.codex/skills/maestro-evidence
+git pull
+python3 scripts/me.py doctor
 ```
 
-`.maestro-evidence.json` は各リポジトリ側にあるので、更新の影響を受けない。設定項目が
-増えた場合は `config validate` が未知のキーや不足を教える。
+symlink は張り直さなくてよい。zip で受け取っている場合は、ディレクトリを置き換えてから
+`doctor` を実行する。
+
+`.maestro-evidence.json` は各リポジトリ側にあるので更新の影響を受けない。設定項目が増えた
+場合は `config validate` が未知のキーや不足を教える。
 
 ## テスト
 
