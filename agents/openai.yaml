@@ -1,0 +1,6 @@
+interface:
+  display_name: "Maestro Evidence"
+  short_description: "差分からケースを洗い出し、録画しながらMaestroで操作してHTML証跡を作る"
+  default_prompt: "$maestro-evidence を使って、このブランチの変更をSimulator/Emulatorで検証し、証跡を作ってください。"
+policy:
+  allow_implicit_invocation: false
