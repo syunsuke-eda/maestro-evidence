@@ -196,11 +196,11 @@ account 名は既定で env 名と同じ（`security find-generic-password -s <s
 }
 ```
 
-## 例: Flutter iOS（Kahoh の実設定）
+## 例: Flutter iOS（実プロジェクトで使っている設定）
 
 ```json
 {
-  "app_id": "com.kahoh.app.dev",
+  "app_id": "com.example.app.dev",
   "platform": "ios",
   "device": { "prefer": "booted", "name": "iPhone 17 Pro" },
   "launch": {
@@ -225,11 +225,11 @@ account 名は既定で env 名と同じ（`security find-generic-password -s <s
   },
   "credentials": {
     "source": "keychain",
-    "keychain_service": "jp.eda.kahoh.simulator-evidence",
-    "env_names": ["MAESTRO_KAHOH_TEST_EMAIL", "MAESTRO_KAHOH_TEST_PASSWORD"],
+    "keychain_service": "com.example.app.maestro-evidence",
+    "env_names": ["MAESTRO_TEST_EMAIL", "MAESTRO_TEST_PASSWORD"],
     "keychain_accounts": {
-      "MAESTRO_KAHOH_TEST_EMAIL": "test-email",
-      "MAESTRO_KAHOH_TEST_PASSWORD": "test-password"
+      "MAESTRO_TEST_EMAIL": "test-email",
+      "MAESTRO_TEST_PASSWORD": "test-password"
     }
   },
   "login_flow": null,

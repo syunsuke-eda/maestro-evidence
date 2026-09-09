@@ -147,7 +147,7 @@ FRAMEWORK_NOISE = [
     "2026-09-08T20:00:02.000+09:00\t[os] 2026-09-08 20:00:02.000 E  Runner[1:a] [com.apple.UIKit:TraitCollection] trait resolution",
     "2026-09-08T20:00:03.000+09:00\t[os] 2026-09-08 20:00:03.000 E  Runner[1:a] [com.apple.dt.xctest:Default] Automation type mismatch",
 ]
-KAHOH_IGNORE = [
+SAMPLE_IGNORE = [
     "CoreHaptics",
     "UIKBFeedbackGenerator",
     "hasError: 0",
@@ -160,7 +160,7 @@ KAHOH_IGNORE = [
 class FrameworkNoiseTest(unittest.TestCase):
     def test_Eレベルの枠組みノイズはignore_patternsで落とせる(self):
         hits = logs.extract_errors_by_source(
-            FRAMEWORK_NOISE + OS_REAL, {"os": LEVEL}, KAHOH_IGNORE
+            FRAMEWORK_NOISE + OS_REAL, {"os": LEVEL}, SAMPLE_IGNORE
         )
         self.assertEqual(len(hits), 2)
         self.assertTrue(all("com.apple" not in hit for hit in hits))
@@ -170,7 +170,7 @@ class FrameworkNoiseTest(unittest.TestCase):
         self.assertEqual(len(hits), 5)
 
     def test_アプリ由来のエラーは落とさない(self):
-        hits = logs.extract_errors_by_source(OS_REAL, {"os": LEVEL}, KAHOH_IGNORE)
+        hits = logs.extract_errors_by_source(OS_REAL, {"os": LEVEL}, SAMPLE_IGNORE)
         self.assertEqual(len(hits), 2)
 
 

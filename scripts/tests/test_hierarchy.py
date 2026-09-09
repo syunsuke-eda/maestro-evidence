@@ -9,7 +9,7 @@ from melib.hierarchy import compress, exclusions_for
 
 CSV_SAMPLE = """element_num,depth,attributes,parent_num
 0,0,"bounds=[0,0][0,0]",
-1,1,"accessibilityText=Kahoh Dev; bounds=[0,0][402,874]; enabled=true; enabled=true",0
+1,1,"accessibilityText=Sample Dev; bounds=[0,0][402,874]; enabled=true; enabled=true",0
 17,10,"bounds=[0,0][402,874]; enabled=true; enabled=true",12
 18,11,"resource-id=album-detail.more; bounds=[354,66][402,114]; enabled=true; enabled=true",17
 51,5,"value=SSID, Wi-Fi 3本中3本; text=SSID, Wi-Fi 3本中3本; resource-id=Wi-Fi; bounds=[315,26][332,38]; enabled=true",48
@@ -80,7 +80,7 @@ class CompressTest(unittest.TestCase):
     def test_CSVから識別子を持つ要素だけ残す(self):
         lines = compress(CSV_SAMPLE)
         self.assertEqual(len(lines), 3)
-        self.assertIn("accessibilityText=Kahoh Dev", lines[0])
+        self.assertIn("accessibilityText=Sample Dev", lines[0])
         self.assertIn("resource-id=album-detail.more", lines[1])
 
     def test_CSVの重複属性は1つに潰す(self):

@@ -84,14 +84,14 @@ class LoadTest(unittest.TestCase):
             self.assertNotIn("add-generic-password", command)
 
 
-KAHOH_CONFIG = {
+SAMPLE_CONFIG = {
     "credentials": {
         "source": "keychain",
-        "keychain_service": "jp.eda.kahoh.simulator-evidence",
-        "env_names": ["MAESTRO_KAHOH_TEST_EMAIL", "MAESTRO_KAHOH_TEST_PASSWORD"],
+        "keychain_service": "com.example.app.maestro-evidence",
+        "env_names": ["MAESTRO_TEST_EMAIL", "MAESTRO_TEST_PASSWORD"],
         "keychain_accounts": {
-            "MAESTRO_KAHOH_TEST_EMAIL": "test-email",
-            "MAESTRO_KAHOH_TEST_PASSWORD": "test-password",
+            "MAESTRO_TEST_EMAIL": "test-email",
+            "MAESTRO_TEST_PASSWORD": "test-password",
         },
     }
 }
@@ -100,7 +100,7 @@ KAHOH_CONFIG = {
 class KeychainAccountTest(unittest.TestCase):
     def test_指定があればaccount名を差し替える(self):
         self.assertEqual(
-            credentials.account_name(KAHOH_CONFIG["credentials"], "MAESTRO_KAHOH_TEST_EMAIL"),
+            credentials.account_name(SAMPLE_CONFIG["credentials"], "MAESTRO_TEST_EMAIL"),
             "test-email",
         )
 
@@ -113,14 +113,14 @@ class KeychainAccountTest(unittest.TestCase):
     def test_旧account名のKeychainからでも読める(self):
         runner = keychain({"test-email": "a@example.com", "test-password": "p"})
         loaded = credentials.load_credentials(
-            KAHOH_CONFIG, environ={}, run_command=runner, which=lambda name: "/usr/bin/security"
+            SAMPLE_CONFIG, environ={}, run_command=runner, which=lambda name: "/usr/bin/security"
         )
-        self.assertEqual(loaded["MAESTRO_KAHOH_TEST_EMAIL"], "a@example.com")
-        self.assertEqual(loaded["MAESTRO_KAHOH_TEST_PASSWORD"], "p")
+        self.assertEqual(loaded["MAESTRO_TEST_EMAIL"], "a@example.com")
+        self.assertEqual(loaded["MAESTRO_TEST_PASSWORD"], "p")
 
     def test_旧account名でもstatusがavailableになる(self):
         status = credentials.credentials_status(
-            KAHOH_CONFIG,
+            SAMPLE_CONFIG,
             environ={},
             run_command=keychain({"test-email": "a", "test-password": "p"}),
             which=lambda name: "/usr/bin/security",
@@ -130,9 +130,9 @@ class KeychainAccountTest(unittest.TestCase):
 
     def test_env名のままでは見つからないことを確認する(self):
         status = credentials.credentials_status(
-            KAHOH_CONFIG,
+            SAMPLE_CONFIG,
             environ={},
-            run_command=keychain({"MAESTRO_KAHOH_TEST_EMAIL": "a", "MAESTRO_KAHOH_TEST_PASSWORD": "p"}),
+            run_command=keychain({"MAESTRO_TEST_EMAIL": "a", "MAESTRO_TEST_PASSWORD": "p"}),
             which=lambda name: "/usr/bin/security",
             system="Darwin",
         )
@@ -141,9 +141,9 @@ class KeychainAccountTest(unittest.TestCase):
     def test_setも差し替え後のaccount名で登録する(self):
         runner = FakeRunner(lambda command: (0, "", ""))
         credentials.store_keychain_values(
-            "jp.eda.kahoh.simulator-evidence",
-            KAHOH_CONFIG["credentials"]["env_names"],
-            accounts=KAHOH_CONFIG["credentials"]["keychain_accounts"],
+            "com.example.app.maestro-evidence",
+            SAMPLE_CONFIG["credentials"]["env_names"],
+            accounts=SAMPLE_CONFIG["credentials"]["keychain_accounts"],
             run_command=runner,
             write=lambda message: None,
         )

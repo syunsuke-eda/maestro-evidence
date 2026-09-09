@@ -1,10 +1,7 @@
 """録画原本をレビュー・PR投稿に使える動画へ整える。
 
-OCR とマスク（redaction）を除いた移植。移植元は削除済みで、旧実装は
-kahoh_app_flutter のブランチ feat/simulator-evidence-keychain-credentials
-（コミット f806b653）の
-.agents/skills/kahoh-simulator-evidence/scripts/evidence_video.py にある。
-freeze 検出のしきい値や fail-open の判断の経緯を追うときに参照する。
+freeze 検出は fail-open にしている。判定に失敗したときは切り詰めずに原本を使う方が、
+誤って操作の冒頭を落とすより証跡として安全なため。
 """
 
 from __future__ import annotations

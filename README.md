@@ -332,3 +332,7 @@ python3 -m unittest discover -s ~/.codex/skills/maestro-evidence/scripts/tests -
 ```
 
 外部パッケージも実機も使わない。外部コマンドはすべてモックする。
+
+## ライセンス
+
+MIT License。`LICENSE` を参照。
